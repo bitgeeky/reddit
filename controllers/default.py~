@@ -1,0 +1,188 @@
+# -*- coding: utf-8 -*-
+# this file is released under public domain and you can use without limitations
+
+#########################################################################
+## This is a samples controller
+## - index is the default action of any application
+## - user is required for authentication and authorization
+## - download is for downloading files uploaded in the db (does streaming)
+## - call exposes all registered services (none by default)
+#########################################################################
+
+import operator
+@auth.requires_login()
+def index():
+
+    #   response.flash = T("Welcome to Reddit.com!")
+    nstore=db(db.news.id > 0).select()
+    cstore=db(db.comments.id > 0).select()
+    catg=db(db.category.id>0).select()
+    news = sorted(nstore, key=lambda k: k['rating'])
+    comments = sorted(cstore, key=lambda k: k['rating'])
+    news.reverse()
+    comments.reverse()
+    return dict(nstore=news,cstore=comments,catg=catg)
+
+@auth.requires_login()
+def displaycat():
+	catid=int(request.post_vars['catid'])
+	nstore=db((db.news.cat==db.category.name)&(db.category.id==catid)).select()
+	nstore=db((db.category.id == catid)&(db.category.name == db.news.cat)).select(db.news.ALL)
+	''' selecting all comments no matter what the category is '''
+	cstore=db(db.comments.id > 0).select()
+	catg=db(db.category.id>0).select()
+	news = sorted(nstore, key=lambda k: k['rating'])
+	comments = sorted(cstore, key=lambda k: k['rating'])
+	news.reverse()
+	comments.reverse()
+	return dict(nstore=news,cstore=comments,catg=catg)
+
+@auth.requires_login()
+def myposts():
+    nstore=db(db.news.usrid == auth.user.id).select()
+    cstore=db(db.comments.id > 0).select()
+    catg=db(db.category.id>0).select()
+    news = sorted(nstore, key=lambda k: k['rating'])
+    comments = sorted(cstore, key=lambda k: k['rating'])
+    news.reverse()
+    comments.reverse()
+    return dict(nstore=news,cstore=comments,catg=catg)
+
+@auth.requires_login()
+def uplike():
+	check=int(request.post_vars['check'])
+	nid=int(request.post_vars['nid'])
+	uid=int(request.post_vars['uid'])
+	nval=db(db.news.id==nid).select()
+	print nval
+	val=int(nval[0]['rating'])
+	if check==1:
+		val=val+5
+		db.lstate.insert(newsid=nid,usrid=uid,cflag=1)
+	elif check==2:
+		val=val-3
+		db.lstate.insert(newsid=nid,usrid=uid,cflag=0)
+	elif check==3:
+		val=val+3
+		db((db.lstate.newsid==nid)&(db.lstate.usrid==uid)).update(cflag=-1)
+	elif check==4:
+		val=val-5
+		db((db.lstate.newsid==nid)&(db.lstate.usrid==uid)).update(cflag=-1)
+	db(db.news.id==nid).update(rating=val)
+	redirect(URL('index'))
+	return dict()
+
+@auth.requires_login()
+def addpost():
+	db.news.usrid.default=auth.user.id
+	form = SQLFORM(db.news)
+	if form.process().accepted:
+		session.flash='form accepted'
+		redirect(URL('index'))
+	elif form.errors:
+		response.flash = 'form has errors'
+	return dict(form=form)
+
+@auth.requires_login()
+def addc():
+	cval=request.post_vars['cval']
+	nid=int(request.post_vars['nid'])
+	usri=int(request.post_vars['usri'])
+	db.comments.insert(val=cval,newsid=nid,usrid=usri)
+	redirect(URL('index'))
+	return dict()
+
+@auth.requires_login()
+def editn():
+	temp=request.vars['nid']
+	if temp is not None:
+		nid=int(temp)
+		session.newid=nid
+	form = SQLFORM(db.news, session.newid,deletable=True)
+	if form.accepts(request.vars,session):
+		response.flash = 'form accepted'
+		redirect(URL('myposts'))
+	elif form.errors:
+		response.flash = 'form has errors'
+	return dict(form=form)
+
+
+def deletecomp(nid):
+	db(db.news.id==nid).delete()
+	db(db.comments.newsid==nid).delete()
+	db(db.lstate.newsid==nid).delete()
+	return dict()
+
+def deleteget():
+	return dict()
+
+@auth.requires_membership('admingroup') 
+def adminpage():
+	return dict()
+
+@auth.requires_membership('admingroup') 
+def deleteuser(): 
+	form = SQLFORM.grid(db.auth_user) 
+	return dict(form=form)
+	
+@auth.requires_membership('admingroup') 
+def deletenews():
+    nstore=db(db.news.id > 0).select()
+    cstore=db(db.comments.id > 0).select()
+    catg=db(db.category.id>0).select()
+    news = sorted(nstore, key=lambda k: k['rating'])
+    comments = sorted(cstore, key=lambda k: k['rating'])
+    news.reverse()
+    comments.reverse()
+    return dict(nstore=news,cstore=comments,catg=catg)
+
+def user():
+   return dict(form=auth())
+"""
+    exposes:
+    http://..../[app]/default/user/login
+    http://..../[app]/default/user/logout
+    http://..../[app]/default/user/register
+    http://..../[app]/default/user/profile
+    http://..../[app]/default/user/retrieve_password
+    http://..../[app]/default/user/change_password
+    use @auth.requires_login()
+	@auth.requires_membership('group name')
+	@auth.requires_permission('read','table name',record_id)
+    to decorate functions that need access control
+"""
+
+def download():
+    """
+    allows downloading of uploaded files
+    http://..../[app]/default/download/[filename]
+    """
+    return response.download(request, db)
+
+
+def call():
+    """
+    exposes services. for example:
+    http://..../[app]/default/call/jsonrpc
+    decorate with @services.jsonrpc the functions to expose
+    supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv
+    """
+    return service()
+
+
+@auth.requires_signature()
+def data():
+    """
+    http://..../[app]/default/data/tables
+    http://..../[app]/default/data/create/[table]
+    http://..../[app]/default/data/read/[table]/[id]
+    http://..../[app]/default/data/update/[table]/[id]
+    http://..../[app]/default/data/delete/[table]/[id]
+    http://..../[app]/default/data/select/[table]
+    http://..../[app]/default/data/search/[table]
+    but URLs must be signed, i.e. linked with
+      A('table',_href=URL('data/tables',user_signature=True))
+    or with the signed load operator
+      LOAD('default','data.load',args='tables',ajax=True,user_signature=True)
+    """
+    return dict(form=crud())

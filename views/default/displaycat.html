@@ -1,0 +1,76 @@
+{{extend 'layout.html'}}
+	<div style="background-color: white; -webkit-box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.4); 
+		-moz-box-shadow: 0px 1px 6px rgba(23, 69, 88, .5);-webkit-border-radius: 12px;
+		-moz-border-radius: 7px; 
+		border-radius: 7px;background: -webkit-gradient(linear, left top, left bottom, 
+		color-stop(0%, white), color-stop(15%, white), color-stop(100%, #D7E9F5)); 
+		background: -moz-linear-gradient(top, white 0%, white 55%, #D5E4F3 130%); width:800px"> 
+<h2><a href="index.html">All Posts</a>&emsp; <a href="addpost.html">New Post</a>
+	&emsp;
+	<a href="myposts.html">My Posts</a>
+	&emsp;
+	<a href="adminpage.html">Admin Page</a>
+</h2>
+		<br/>
+<form action="displaycat" method="post">
+{{for k in catg:}}
+	<button type="submit" name="catid" id="catid" value="{{=k['id']}}">{{=k['name']}}</button>
+	&nbsp;
+	{{pass}}
+</form>
+</div>
+{{for l in nstore:}}
+<div style="background-color:#E0ECF8;width:800px;-webkit-border-radius: 12px;-moz-border-radius: 7px; border-radius: 7px;">
+<a href='{{=l['nurl']}}' target="_blank"><h3>{{=l['head']}}</h3></a><br/>
+{{tempurl=l['nurl']}}
+{{if 'www.youtube.com/watch?v=' in tempurl:}}
+{{arr=tempurl.split('v=')}}
+<iframe width="270" height="200"
+	src="http://www.youtube.com/embed/{{=arr[1]}}">
+</iframe>
+<br/>
+{{pass}}
+{{=l['ndate']}}&emsp;Rating:&nbsp;{{=l['rating']}}&emsp;
+{{check=db((db.lstate.newsid==l['id'])&(db.lstate.usrid==auth.user.id)).select()}}
+{{for p in check:}}
+{{temp=p['cflag']}}
+{{pass}}
+{{if len(check)==0 or temp==-1:}}
+<form action="uplike" method="post" style='margin: 0; padding: 0; display:inline'>
+	<input type="hidden" name="uid" id="uid" value="{{=auth.user.id}}"/>
+	<input type="hidden" name="nid" id="nid" value="{{=l['id']}}"/>
+	<button type="submit" name="check" id="check" value="1">Like</button>
+	<button type="submit" name="check" id="check" value="2">Dislike</button>
+</form>
+{{elif temp==0:}}
+<form action="uplike" method="post" style='margin: 0; padd    ing: 0; display:inline'>
+	<input type="hidden" name="uid" id="uid" value="{{=auth.user.id}}"/>
+	<input type="hidden" name="nid" id="nid" value="{{=l['id']}}"/>
+	<button type="submit" name="check" id="check" value="3">UnDislike</button>
+</form>
+{{elif temp==1:}}
+<form action="uplike" method="post" style='margin: 0; padd    ing: 0; display:inline'>
+	<input type="hidden" name="uid" id="uid" value="{{=auth.user.id}}"/>
+	<input type="hidden" name="nid" id="nid" value="{{=l['id']}}"/>
+	<button type="submit" name="check" id="check" value="4">Unlike</button>
+</form>
+{{pass}}
+<br/>
+Commments:
+<br/>
+{{for m in cstore:}}
+{{if m['newsid']==l['id']:}}
+{{=m['val']}} &emsp;{{=m['cdate']}}
+<br/>
+{{pass}}
+{{pass}}
+<form action="addc" method="post">
+	<input type="text" name="cval" id="cval" placeholder="comment here" />
+
+	<input type="hidden" name="nid" id="nid" value="{{=l['id']}}"/>
+	<input type="hidden" name="usri" id="usri" value={{=auth.user.id}} />
+	<input type="submit" value="Post"/>
+</form>
+</div>
+<br/>
+{{pass}}

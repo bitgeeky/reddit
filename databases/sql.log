@@ -1,0 +1,103 @@
+timestamp: 2013-08-28T20:40:55.798806
+CREATE TABLE auth_user(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    first_name CHAR(128),
+    last_name CHAR(128),
+    email CHAR(512),
+    password CHAR(512),
+    registration_key CHAR(512),
+    reset_password_key CHAR(512),
+    registration_id CHAR(512)
+);
+success!
+timestamp: 2013-08-28T20:40:55.899366
+CREATE TABLE auth_group(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    role CHAR(512),
+    description TEXT
+);
+success!
+timestamp: 2013-08-28T20:40:56.029540
+CREATE TABLE auth_membership(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES auth_user (id) ON DELETE CASCADE,
+    group_id INTEGER REFERENCES auth_group (id) ON DELETE CASCADE
+);
+success!
+timestamp: 2013-08-28T20:40:56.111542
+CREATE TABLE auth_permission(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    group_id INTEGER REFERENCES auth_group (id) ON DELETE CASCADE,
+    name CHAR(512),
+    table_name CHAR(512),
+    record_id INTEGER
+);
+success!
+timestamp: 2013-08-28T20:40:56.187946
+CREATE TABLE auth_event(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    time_stamp TIMESTAMP,
+    client_ip CHAR(512),
+    user_id INTEGER REFERENCES auth_user (id) ON DELETE CASCADE,
+    origin CHAR(512),
+    description TEXT
+);
+success!
+timestamp: 2013-08-28T20:40:56.263334
+CREATE TABLE auth_cas(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES auth_user (id) ON DELETE CASCADE,
+    created_on TIMESTAMP,
+    service CHAR(512),
+    ticket CHAR(512),
+    renew CHAR(1)
+);
+success!
+timestamp: 2013-08-28T20:42:11.451350
+CREATE TABLE comments(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    val TEXT,
+    username CHAR(512),
+    cdate TIMESTAMP,
+    rating INTEGER
+);
+success!
+timestamp: 2013-08-28T20:42:11.574813
+CREATE TABLE category(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name CHAR(512)
+);
+success!
+timestamp: 2013-08-28T20:53:35.372001
+CREATE TABLE news(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    head CHAR(512),
+    nurl CHAR(512),
+    cat CHAR(32768),
+    username CHAR(512),
+    ndate TIMESTAMP,
+    rating INTEGER
+);
+success!
+timestamp: 2013-08-28T21:09:06.581831
+ALTER TABLE news ADD usrn CHAR(32768);
+timestamp: 2013-08-28T21:33:14.719949
+ALTER TABLE news ADD usrname CHAR(512);
+timestamp: 2013-08-28T21:33:14.822264
+ALTER TABLE comments ADD usrname CHAR(512);
+timestamp: 2013-08-29T01:52:42.985946
+ALTER TABLE comments ADD newsid INTEGER;
+timestamp: 2013-08-29T22:49:55.520235
+ALTER TABLE comments ADD usrid INTEGER;
+timestamp: 2013-08-30T14:44:39.410379
+CREATE TABLE lstate(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    newsid INTEGER,
+    usrid INTEGER,
+    cflag INTEGER
+);
+success!
+timestamp: 2013-09-01T08:45:48.774740
+ALTER TABLE news ADD usrid INTEGER;
+timestamp: 2013-09-02T05:28:21.644234
+ALTER TABLE auth_user ADD role CHAR(512);
